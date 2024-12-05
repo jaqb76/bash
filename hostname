@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# Nazwa pliku wyjściowego
+OUTPUT_FILE="/var/log/hostname.log"
+
+# Funkcja do sprawdzania uprawnień
+check_permissions() {
+    local dir_path=$(dirname "$1")
+    if [ ! -w "$dir_path" ]; then
+        echo "Błąd: Brak uprawnień do zapisu w katalogu $dir_path"
+        exit 1
+    fi
+}
+
+# Funkcja do pobrania pełnej nazwy hosta
+get_hostname() {
+    local full_hostname
+    full_hostname=$(hostname -f 2>/dev/null)
+    
+    if [ $? -ne 0 ]; then
+        echo "Błąd: Nie udało się pobrać pełnej nazwy hosta"
+        exit 1
+    fi
+    
+    echo "$full_hostname"
+}
+
+# Funkcja do zapisywania danych do pliku
+save_to_file() {
+    local hostname="$1"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    
+    {
+        echo "Timestamp: $timestamp"
+        echo "Hostname: $hostname"
+        echo "-------------------"
+    } >> "$OUTPUT_FILE" 2>/dev/null
+    
+    if [ $? -ne 0 ]; then
+        echo "Błąd: Nie udało się zapisać danych do pliku $OUTPUT_FILE"
+        exit 1
+    fi
+}
+
+# Główna funkcja
+main() {
+    # Sprawdź uprawnienia przed rozpoczęciem
+    check_permissions "$OUTPUT_FILE"
+    
+    # Pobierz pełną nazwę hosta
+    local hostname
+    hostname=$(get_hostname)
+    
+    # Zapisz wynik do pliku
+    save_to_file "$hostname"
+    
+    echo "Sukces: Nazwa hosta została zapisana do pliku $OUTPUT_FILE"
+}
+
+# Uruchom skrypt
+main
